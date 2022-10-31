@@ -5,6 +5,7 @@ const authRoutes = require('./Routes/auth')
 const mongoose = require('mongoose')
 const path = require('path');
 const multer = require('multer')
+const fs = require("fs")
 
 const port = 8080
 
@@ -20,7 +21,54 @@ const fileStorage = multer.diskStorage({
     }
     
 })
+/**
+ * 
+ * test video stream 
+ * 1st get for page html 
+ * 2nd get for api for res
+ */
+ app.get("/htmlVideo", function (req, res) {
+    res.sendFile(__dirname + "/index.html");
+  });
 
+ app.get("/video", function (req, res) {
+    console.log("here")
+    // Ensure there is a range given for the video
+    const range = req.headers.range;
+    if (!range) {
+      res.status(400).send("Requires Range header");
+    }
+    console.log("here1")
+    // get video stats (about 61MB)
+    const videoPath = "bigbuck.mp4";
+    const videoSize = fs.statSync("bigbuck.mp4").size;
+    console.log("here2")
+    // Parse Range
+    // Example: "bytes=32324-"
+    const CHUNK_SIZE = 10 ** 6; // about 1MB
+    const start = Number(range.replace(/\D/g, ""));
+    const end = Math.min(start + CHUNK_SIZE, videoSize - 1);
+    
+    // Create headers
+    const contentLength = end - start + 1;
+    const headers = {
+      "Content-Range": `bytes ${start}-${end}/${videoSize}`,
+      "Accept-Ranges": "bytes",
+      "Content-Length": contentLength,
+      "Content-Type": "video/mp4",
+    };
+    
+    // HTTP Status 206 for Partial Content
+    res.writeHead(206, headers);
+  
+    // create video read stream for this particular chunk
+    const videoStream = fs.createReadStream(videoPath, { start, end });
+  
+    // Stream the video chunk to the client
+    videoStream.pipe(res);
+  });
+  
+  //=============================
 const fileFilter = (req,file,cb)=>{
     if(file.mimetye === 'image/png' || file.mimetye === 'image/jpg' || file.mimetye === 'image/jpeg'){
         cb(null,true);

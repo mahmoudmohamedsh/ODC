@@ -6,7 +6,6 @@ const bycrypt = require('bcryptjs');
 const user = require('../models/user');
 const jwt = require('jsonwebtoken');
 const dotenv = require("dotenv");
-const { post } = require('../Routes/auth');
 dotenv.config();
 
 exports.signup = (req, res, next) => {
